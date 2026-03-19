@@ -146,7 +146,7 @@ docker pull ghcr.io/your-org/sast-tool:latest
 ```
 
 ---
-
+<!--
 ## 🚀 Quick Start
 
 **Scan a local directory:**
@@ -208,7 +208,7 @@ reporting:
 ```
 
 ---
-
+-->
 ## 👤 User Stories
 
 ### 🧑‍💻 Developer
@@ -347,13 +347,6 @@ pytest tests/ -v --cov=sast_tool
 Please use the GitHub Issues tab. When reporting a false positive or false
 negative, include the minimal code snippet that reproduces the finding and the
 output of `sast scan --output json` on that snippet.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
-See the [LICENSE](./LICENSE) file for full terms.
 
 ---
 

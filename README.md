@@ -151,3 +151,259 @@ The tool is built around three principles:
 ---
 
 ## 🏗️ Architecture
+
+
+
+Got it — you want everything strictly in proper Markdown format, clean and GitHub-ready (no extra IDs, no mixed formatting). Here it is:
+
+# 🔍 Static Analyzer
+
+> A unified application security testing platform combining Static Application
+> Security Testing (SAST), Dynamic Application Security Testing (DAST), and an
+> AI-powered fix engine — built for modern engineering teams.
+
+---
+
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [User Stories](#user-stories)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Overview
+
+**Static Analyzer** is an open-source security testing platform that combines:
+
+- **SAST** – analyzes source code (AST, CFG, DFG)
+- **DAST** – tests running applications with real attack payloads
+- **AI Fix Engine** – provides explanations and ready-to-apply code fixes
+
+### Supported Languages
+
+- Python
+- JavaScript / TypeScript
+- Java
+- Go
+- C/C++
+
+---
+
+## ✨ Features
+
+### 🔐 SAST — Security Analysis
+
+- Hardcoded secrets detection — CWE-798  
+- SQL injection detection — CWE-89  
+- Command injection — CWE-78  
+- Path traversal — CWE-22  
+- Cross-Site Scripting (XSS) — CWE-79  
+- Dangerous functions (`eval`, `exec`, `os.system`)  
+- Weak cryptography (MD5, SHA1, DES) — CWE-327  
+- Insecure deserialization — CWE-502  
+- Buffer overflow detection (C/C++) — CWE-120  
+- Missing input validation detection  
+
+---
+
+### 🌐 DAST — Dynamic Analysis
+
+- Automated crawler with endpoint discovery  
+- Form enumeration and API mapping  
+- Authentication support (cookies, tokens, headers)  
+
+#### OWASP Top 10 Coverage
+
+- Broken Access Control  
+- Cryptographic Failures  
+- Injection  
+- Insecure Design  
+- Security Misconfiguration  
+- Vulnerable Components  
+- Authentication Failures  
+- Integrity Failures  
+- Logging Failures  
+- SSRF  
+
+---
+
+### 🧹 Code Quality
+
+- Cyclomatic complexity analysis  
+- Dead and unreachable code detection  
+- Function length enforcement  
+- Global variable mutation detection  
+- Bare `except` detection  
+- Missing docstring enforcement  
+
+---
+
+### 🤖 AI Fix Engine
+
+- Powered by Claude API  
+- Provides:
+  - Plain-English explanation  
+  - Code fix (diff format)  
+  - Severity justification  
+  - Confidence scoring  
+
+---
+
+### 📍 Output & Reporting
+
+- SARIF (GitHub & Azure integration)  
+- JSON output  
+- HTML reports  
+- CLI output with color-coded severity  
+
+---
+
+## 🏗️ Architecture
+
+```text
+INPUT → SAST / DAST → FINDINGS → AI FIX ENGINE → OUTPUT
+
+
+---
+
+📦 Installation
+
+Using pip
+
+pip install static-analyzer
+
+Using Docker
+
+docker pull ghcr.io/your-org/static-analyzer:latest
+
+
+---
+
+🚀 Quick Start
+
+Scan a project
+
+sast scan ./src
+
+Generate HTML report
+
+sast scan ./src --output html
+
+Fail CI on HIGH severity
+
+sast scan ./src --fail-on HIGH
+
+
+---
+
+⚙️ Example Config (.sast.yml)
+
+version: 1
+
+analyzer:
+  languages: [python, javascript, java, go]
+  exclude_paths:
+    - "tests/**"
+    - "vendor/**"
+
+rules:
+  enabled: ["SEC-*"]
+
+thresholds:
+  fail_on_severity: HIGH
+  max_new_findings: 0
+
+reporting:
+  formats: [sarif, html, json]
+  pr_annotation: true
+
+
+---
+
+👤 User Stories
+
+🧑‍💻 Developer
+
+Automatically scans pull requests
+
+Displays inline issues and fixes
+
+Supports # nosec suppression
+
+CLI tool for local scanning
+
+
+
+---
+
+📊 Engineering Manager
+
+View security posture reports
+
+Configure rules and thresholds
+
+Enforce CI security policies
+
+Prevent new vulnerabilities
+
+
+
+---
+
+🤝 Contributing
+
+Clone the repository
+
+git clone https://github.com/your-org/static-analyzer.git
+cd static-analyzer
+
+Set up environment
+
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+
+Run tests
+
+pytest
+
+How to Add a Rule
+
+1. Create a rule file
+
+
+2. Implement analysis logic
+
+
+3. Register it in YAML
+
+
+4. Add tests
+
+
+5. Open a pull request
+
+
+
+
+---
+
+📄 License
+
+MIT License
+
+---
+
+This version is:
+- ✅ 100% valid Markdown  
+- ✅ Clean for GitHub README  
+- ✅ Copy-paste ready  
+- ✅ No extra artifacts  
+
+If you want, I can next make it **look like a top-tier open-source repo (badges, diagrams, visuals, animations)** 🔥

@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List
-
+from sast_tool.engine.aggregator import Aggregator
+from sast_tool.sast.bandit_runner import BanditRunner
+from sast_tool.sast.semgrep_runner import SemgrepRunner
 from sast_tool.engine.models import Finding
 from sast_tool.rules.sec_001_dangerous_calls import DangerousEvalRule
 
@@ -11,6 +13,9 @@ class Scanner:
         self.rules = [
             DangerousEvalRule(),
         ]
+        self.bandit = BanditRunner()
+        self.aggregator = Aggregator()
+        self.semgrep = SemgrepRunner()
 
     def scan_file(self, file_path: Path) -> List[Finding]:
         findings: List[Finding] = []
@@ -31,8 +36,19 @@ class Scanner:
 
         path = Path(directory)
 
+        # 1. Custom rules
         for file_path in path.rglob("*.py"):
             file_findings = self.scan_file(file_path)
             findings.extend(file_findings)
+
+        # 2. Bandit
+        bandit_findings = self.bandit.run(directory)
+        findings.extend(bandit_findings)
+        # 3. Semgrep
+        semgrep_findings = self.semgrep.run(directory)
+        findings.extend(semgrep_findings)
+
+        # 4. Aggregate (dedup + sort)
+        findings = self.aggregator.aggregate(findings)
 
         return findings

@@ -11,13 +11,10 @@ class SemgrepRunner:
 
         try:
             result = subprocess.run(
-                ["semgrep", "--config=auto", "--json", target_path],
+                ["semgrep", "--config=auto", "--json", "--no-git-ignore", target_path],
                 capture_output=True,
                 text=True,
             )
-            #fgggggg
-            print("Running Semgrep...")
-            print(result.stdout[:500])
 
             data = json.loads(result.stdout)
 

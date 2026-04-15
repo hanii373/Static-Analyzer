@@ -1,41 +1,36 @@
-from typing import List, Set, Tuple
-
+from typing import List, Dict, Tuple
 from sast_tool.engine.models import Finding
 
 
 class Aggregator:
-    def deduplicate(self, findings: List[Finding]) -> List[Finding]:
-        unique: List[Finding] = []
-        seen: Set[Tuple] = set()
+    def aggregate(self, findings: List[Finding]) -> List[Finding]:
+        unique: Dict[Tuple[str, int, str], Finding] = {}
 
         for f in findings:
             key = (
-                f.rule_id,
                 f.location.file,
                 f.location.line,
-                f.message,
+                self.normalize_message(f.message),
             )
 
-            if key not in seen:
-                seen.add(key)
-                unique.append(f)
+            if key not in unique:
+                unique[key] = f
+            else:
+                # Merge logic (keep highest severity)
+                existing = unique[key]
+                if self.severity_rank(f.severity.value) > self.severity_rank(existing.severity.value):
+                    unique[key] = f
 
-        return unique
+        return list(unique.values())
 
-    def sort_by_severity(self, findings: List[Finding]) -> List[Finding]:
-        severity_order = {
-            "HIGH": 3,
-            "MEDIUM": 2,
+    def normalize_message(self, message: str) -> str:
+        # very basic normalization
+        return message.lower().strip()
+
+    def severity_rank(self, severity: str) -> int:
+        ranking = {
             "LOW": 1,
+            "MEDIUM": 2,
+            "HIGH": 3,
         }
-
-        return sorted(
-            findings,
-            key=lambda f: severity_order.get(f.severity.value, 0),
-            reverse=True,
-        )
-
-    def aggregate(self, findings: List[Finding]) -> List[Finding]:
-        findings = self.deduplicate(findings)
-        findings = self.sort_by_severity(findings)
-        return findings
+        return ranking.get(severity, 0)

@@ -1,0 +1,37 @@
+
+        <html>
+        <head>
+            <title>Static Analyzer Report</title>
+            <style>
+                body { font-family: Arial; background: #0f172a; color: #e2e8f0; }
+                h1 { color: #38bdf8; }
+                .card {
+                    background: #1e293b;
+                    padding: 15px;
+                    margin: 10px 0;
+                    border-radius: 8px;
+                }
+                .HIGH { border-left: 5px solid red; }
+                .MEDIUM { border-left: 5px solid orange; }
+                .LOW { border-left: 5px solid green; }
+                .file { color: #94a3b8; }
+                .snippet {
+                    background: #020617;
+                    padding: 10px;
+                    margin-top: 5px;
+                    font-family: monospace;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>🔍 Static Analyzer Report</h1>
+        
+                <div class="card HIGH">
+                    <h3>[HIGH] Use of eval() is dangerous and can lead to code execution</h3>
+                    <p class="file">test_project/vuln.py:2:1</p>
+                    <div class="snippet">eval(user)</div>
+                </div>
+                
+        </body>
+        </html>
+        

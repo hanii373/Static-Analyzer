@@ -3,6 +3,7 @@ import argparse
 from sast_tool.engine.scanner import Scanner
 from sast_tool.reporters.json_reporter import JSONReporter
 from sast_tool.reporters.sarif_reporter import SarifReporter
+from sast_tool.reporters.html_reporter import HTMLReporter
 
 def main():
     parser = argparse.ArgumentParser(
@@ -17,7 +18,7 @@ def main():
     scan_parser.add_argument("path", help="Path to scan")
     scan_parser.add_argument(
         "--format",
-        choices=["text", "json", "sarif"],
+        choices=["text", "json", "sarif", "html"],
         default="text",
         help="Output format",
 )
@@ -41,6 +42,15 @@ def run_scan(path: str, output_format: str):
     if output_format == "sarif":
         reporter = SarifReporter()
         print(reporter.report(findings))
+        return
+    if output_format == "html":
+        reporter = HTMLReporter()
+        html = reporter.report(findings)
+
+        with open("report.html", "w") as f:
+            f.write(html)
+    
+        print("📄 HTML report generated: report.html")
         return
 
     # default text output

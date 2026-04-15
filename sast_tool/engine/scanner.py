@@ -4,15 +4,14 @@ from sast_tool.engine.aggregator import Aggregator
 from sast_tool.sast.bandit_runner import BanditRunner
 from sast_tool.sast.semgrep_runner import SemgrepRunner
 from sast_tool.engine.models import Finding
+from sast_tool.rules.loader import load_rules
 from sast_tool.rules.sec_001_dangerous_calls import DangerousEvalRule
 
 
 class Scanner:
     def __init__(self):
         # Register rules (for now manually)
-        self.rules = [
-            DangerousEvalRule(),
-        ]
+        self.rules = load_rules()
         self.bandit = BanditRunner()
         self.aggregator = Aggregator()
         self.semgrep = SemgrepRunner()
@@ -51,4 +50,7 @@ class Scanner:
         # 4. Aggregate (dedup + sort)
         findings = self.aggregator.aggregate(findings)
 
-        return findings
+        all_findings = findings
+        clean_findings = self.aggregator.aggregate(all_findings)
+
+        return clean_findings

@@ -59,7 +59,7 @@ def run_scan(path: str, output_format: str):
         return
 
     for f in findings:
-        print(f"[{f.severity}] {f.message}")
+        print(f"[{f.severity}] ({f.confidence:.1f}) {f.message}")        
         print(f"File: {f.location.file}")
         print(f"Line: {f.location.line}")
         print(f"Column: {f.location.column}")

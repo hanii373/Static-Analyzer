@@ -1,5 +1,5 @@
 from typing import List, Dict, Tuple
-from sast_tool.engine.models import Finding
+from sast_tool.engine.models import Finding, Severity
 
 
 class Aggregator:
@@ -16,16 +16,34 @@ class Aggregator:
             if key not in unique:
                 unique[key] = f
             else:
-                # Merge logic (keep highest severity)
                 existing = unique[key]
-                if self.severity_rank(f.severity.value) > self.severity_rank(existing.severity.value):
+
+                # 🔥 Boost confidence (multi-engine detection)
+                existing.confidence = min(1.0, getattr(existing, "confidence", 0.5) + 0.2)
+
+                # 🔥 Keep higher confidence finding
+                if getattr(f, "confidence", 0.5) > getattr(existing, "confidence", 0.5):
                     unique[key] = f
+
+                # 🔥 Optional severity boost
+                if existing.severity.value == "MEDIUM":
+                    existing.severity = Severity.HIGH
 
         return list(unique.values())
 
     def normalize_message(self, message: str) -> str:
-        # very basic normalization
-        return message.lower().strip()
+        message = message.lower()
+
+        if "eval" in message:
+            return "eval_usage"
+
+        if "exec" in message:
+            return "exec_usage"
+
+        if "sql" in message:
+            return "sql_injection"
+
+        return message.strip()
 
     def severity_rank(self, severity: str) -> int:
         ranking = {

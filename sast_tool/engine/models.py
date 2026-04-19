@@ -23,8 +23,10 @@ class Finding:
     message: str
     severity: Severity
     location: Location
-    confidence: float = 0.5
-
     # optional fields (use later)
     snippet: Optional[str] = None
+    # AI fields
+    explanation: Optional[str] = None
     fix: Optional[str] = None
+    fixed_code: Optional[str] = None
+    confidence: float = 0.5

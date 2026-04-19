@@ -6,7 +6,9 @@ from sast_tool.sast.semgrep_runner import SemgrepRunner
 from sast_tool.engine.models import Finding
 from sast_tool.rules.loader import load_rules
 from sast_tool.rules.sec_001_dangerous_calls import DangerousEvalRule
-
+from sast_tool.ai.client import AIClient
+from sast_tool.ai.prompt_builder import build_prompt
+from sast_tool.ai.fix_parser import parse_response
 
 class Scanner:
     def __init__(self):
@@ -15,6 +17,7 @@ class Scanner:
         self.bandit = BanditRunner()
         self.aggregator = Aggregator()
         self.semgrep = SemgrepRunner()
+        self.ai = AIClient()
 
     def scan_file(self, file_path: Path) -> List[Finding]:
         findings: List[Finding] = []
@@ -52,5 +55,18 @@ class Scanner:
 
         all_findings = findings
         clean_findings = self.aggregator.aggregate(all_findings)
+        for f in clean_findings:
+            try:
+                prompt = build_prompt(f)
+                response = self.ai.get_fix(prompt)
+                parsed = parse_response(response)
+
+                f.explanation = parsed["explanation"]
+                f.fix = parsed["fix"]
+                f.fixed_code = parsed["code"]
+            except Exception:
+                f.explanation = "AI unavailable"
+                f.fix = ""
+                f.fixed_code = ""
 
         return clean_findings

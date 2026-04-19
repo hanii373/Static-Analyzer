@@ -64,6 +64,13 @@ def run_scan(path: str, output_format: str):
         print(f"Line: {f.location.line}")
         print(f"Column: {f.location.column}")
         print(f"Snippet: {f.snippet}")
+        if f.explanation:
+            print("\nExplanation:")
+            print(f.explanation.strip())
+
+        if hasattr(f, "recommendation") and f.recommendation:
+            print("\nRecommendation:")
+            print(f.recommendation.strip())
         print("-" * 50)
 
 if __name__ == "__main__":

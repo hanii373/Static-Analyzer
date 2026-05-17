@@ -6,7 +6,7 @@ from sast_tool.engine.models import Finding, Severity
 from sast_tool.rules.loader import RuleLoader
 from sast_tool.sast.bandit_runner import BanditRunner
 from sast_tool.sast.semgrep_runner import SemgrepRunner
-from sast_tool.engine.aggregator import FindingAggregator
+from sast_tool.engine.aggregator import Aggregator
 from sast_tool.ai.client import AIClient
 from sast_tool.ai.cache import AICache  # Supporting the new caching layer
 
@@ -21,7 +21,7 @@ class Scanner:
         self.rule_loader = RuleLoader()
         self.bandit = BanditRunner()
         self.semgrep = SemgrepRunner()
-        self.aggregator = FindingAggregator()
+        self.aggregator = Aggregator()        
         self.ai_client = AIClient()
         self.ai_cache = AICache() # Initialize the SQLite cache
         
@@ -29,30 +29,42 @@ class Scanner:
         self.ai_severity_threshold = [Severity.HIGH, Severity.CRITICAL]
 
     async def scan_directory(self, directory_path: str) -> List[Finding]:
-        """Performs a full scan and enriches high-priority findings with AI."""
-        logger.info(f"Starting scan for directory: {directory_path}")
+        """Performs a full scan on directories or single files and enriches findings."""
+        logger.info(f"Starting scan for target: {directory_path}")
         all_findings = []
-
-        # 1. Run Internal Custom Rules
         rules = self.rule_loader.load_rules()
-        for root, _, files in os.walk(directory_path):
-            for file in files:
-                if file.endswith(".py"):
-                    file_path = os.path.join(root, file)
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        code = f.read()
-                        for rule in rules:
-                            findings = rule.analyze(file_path, code)
-                            all_findings.extend(findings)
 
-        # 2. Run Integrated Open-Source Tools
-        all_findings.extend(self.bandit.run(directory_path))
-        all_findings.extend(self.semgrep.run(directory_path))
+        # 1. Collect target files (Handles both single file path and full directory walks)
+        target_files = []
+        if os.path.isfile(directory_path):
+            if directory_path.endswith(".py"):
+                target_files.append(directory_path)
+        else:
+            for root, _, files in os.walk(directory_path):
+                for file in files:
+                    if file.endswith(".py"):
+                        target_files.append(os.path.join(root, file))
 
-        # 3. Deduplicate and Aggregate
+        # 2. Run Internal Custom AST/Traverser Rules
+        for file_path in target_files:
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    code = f.read()
+                    for rule in rules:
+                        findings = rule.analyze(file_path, code)
+                        all_findings.extend(findings)
+            except Exception as e:
+                logger.error(f"Failed to read file {file_path}: {e}")
+
+        # 3. Run Integrated Open-Source Tools (Only if a directory path is targeted)
+        if os.path.isdir(directory_path):
+            all_findings.extend(self.bandit.run(directory_path))
+            all_findings.extend(self.semgrep.run(directory_path))
+
+        # 4. Deduplicate and Aggregate
         unique_findings = self.aggregator.aggregate(all_findings)
         
-        # 4. AI Enrichment with Cost Guards
+        # 5. AI Enrichment with Cost Guards
         enriched_findings = await self._enrich_findings_parallel(unique_findings)
 
         return enriched_findings

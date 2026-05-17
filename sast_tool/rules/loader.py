@@ -1,21 +1,16 @@
-import importlib
-import pkgutil
-import inspect
+# sast_tool/rules/loader.py
+from sast_tool.rules.sec_001_dangerous_calls import DangerousOsSystemRule, DangerousSubprocessRule
+from sast_tool.rules.sec_002_dangerous_eval import DangerousEvalRule
 
-from sast_tool.rules.base import Rule
-
-
-def load_rules():
-    import sast_tool.rules
-
-    rules = []
-    package = sast_tool.rules
-
-    for _, module_name, _ in pkgutil.iter_modules(package.__path__):
-        module = importlib.import_module(f"{package.__name__}.{module_name}")
-
-        for name, obj in inspect.getmembers(module, inspect.isclass):
-            if issubclass(obj, Rule) and obj is not Rule:
-                rules.append(obj())
-
-    return rules
+class RuleLoader:
+    """
+    Explicit rule loader that directly instantiates AST security checks
+    to ensure reliable cross-platform execution in virtual environments.
+    """
+    def load_rules(self):
+        # Directly return instances of your brand new AST rule classes
+        return [
+            DangerousOsSystemRule(),
+            DangerousSubprocessRule(),
+            DangerousEvalRule()
+        ]

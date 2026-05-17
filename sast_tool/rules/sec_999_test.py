@@ -1,20 +1,13 @@
-from typing import List
-from sast_tool.rules.base import Rule
-from sast_tool.engine.models import Finding, Severity, Location
+# sast_tool/rules/loader.py
+from sast_tool.rules.sec_001_dangerous_calls import DangerousOsSystemRule, DangerousSubprocessRule
+from sast_tool.rules.sec_002_dangerous_eval import DangerousEvalRule
+from sast_tool.rules.sec_999_test import TestRule # Explicitly import your dummy rule class
 
-
-class DummyRule(Rule):
-    def analyze(self, file_path: str, code: str) -> List[Finding]:
+class RuleLoader:
+    def load_rules(self):
         return [
-            Finding(
-                rule_id="TEST-999",
-                message="Dummy rule triggered",
-                severity=Severity.LOW,
-                location=Location(
-                    file=file_path,
-                    line=1,
-                    column=1,
-                ),
-                snippet="dummy",
-            )
+            DangerousOsSystemRule(),
+            DangerousSubprocessRule(),
+            DangerousEvalRule(),
+            TestRule() # Add it here
         ]

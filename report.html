@@ -21,6 +21,12 @@
                     margin-top: 5px;
                     font-family: monospace;
                 }
+                .ai {
+                    background: #020617;
+                    padding: 10px;
+                    margin-top: 10px;
+                    border-left: 4px solid #38bdf8;
+                }
             </style>
         </head>
         <body>
@@ -28,8 +34,35 @@
         
                 <div class="card HIGH">
                     <h3>[HIGH] Use of eval() is dangerous and can lead to code execution</h3>
-                    <p class="file">test_project/vuln.py:2:1</p>
-                    <div class="snippet">eval(user)</div>
+                    <p class="file">./test_vulnerabilities.py:5:62</p>
+
+                    <div class="snippet"># print("Evaluating safe context strings parsing check here: eval(...)")</div>
+
+                    
+
+                    
+                </div>
+                
+                <div class="card HIGH">
+                    <h3>[HIGH] Use of eval() is dangerous and can lead to code execution</h3>
+                    <p class="file">./test_vulnerabilities.py:10:1</p>
+
+                    <div class="snippet">eval(user_data)</div>
+
+                    
+
+                    
+                </div>
+                
+                <div class="card LOW">
+                    <h3>[LOW] Dummy rule triggered</h3>
+                    <p class="file">./test_vulnerabilities.py:1:1</p>
+
+                    <div class="snippet">dummy</div>
+
+                    
+
+                    
                 </div>
                 
         </body>

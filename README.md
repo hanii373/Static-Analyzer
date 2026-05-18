@@ -72,3 +72,176 @@ Astra Ferrum structures operations into clean, separated tracking pipelines:
                                                                                                │
                                                                                                ▼
 [ EXPORT SECURITY REPORTS ] ◄── [ JSON TELEMETRY ] ◄── ( Sequential Gemini API ) ◄── [ AGGREGATED METRICS ]
+
+## Ingestion
+Source file contents are passed safely to the AST parser, while live endpoint URLs are routed to the web crawler.
+
+## Analysis
+The engines map code logic trees and attack surface fields concurrently to extract structural signatures.
+
+## Enrichment
+Detected vulnerabilities are normalized into standardized datasets and funneled sequentially through the Gemini API client interface.
+
+## Reporting
+Fully populated reports are rendered to the terminal stream or packaged into downloadable JSON formats.
+
+---
+
+# 📦 Installation & Environment Setup
+
+## Local Workspace Setup
+
+Initialize your virtual environment using your package management tools to insulate system dependencies:
+
+```bash
+# 1. Clone the core repository from GitHub
+git clone https://github.com/hanii373/Static-Analyzer.git
+cd Static-Analyzer
+
+# 2. Build your isolated virtual tracking environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3. Download the exact operational package matrix
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install python-dotenv
+```
+
+## Docker Container Ingestion
+
+Pull down the fully pre-compiled container package image from your target distribution network:
+
+```bash
+docker pull ghcr.io/hanii373/astra-ferrum:latest
+```
+
+---
+
+# 🚀 Quick Start & Usage Modes
+
+## 1. Configure the Local Secrets Boundary
+
+Create a local `.env` configuration file directly in the root directory of your project workspace to manage tracking tokens securely:
+
+```env
+GEMINI_API_KEY="AIzaSyYourSecretAPIKeyProvisionedFromGoogleAIStudio"
+```
+
+## 2. Launch the Cyberpunk Web Dashboard
+
+Spin up your local Uvicorn FastAPI dashboard server infrastructure:
+
+```bash
+python3 -m uvicorn sast_tool.dashboard.app:app --reload --port 8000
+```
+
+Open a browser window and navigate to:
+
+```text
+http://127.0.0.1:8000
+```
+
+to interact with the interface.
+
+## 3. Run Scanning Pipelines via CLI
+
+```bash
+# Execute local folder syntax scanning operations
+sast scan ./src
+
+# Generate structured, self-contained JSON security telemetry reports
+sast scan ./src --output json --export astra_report.json
+```
+
+---
+
+# ⚙️ Configuration Schema (`.sast.yml`)
+
+You can fully customize engine features, pass-fail quality thresholds, and paths to ignore by dropping a `.sast.yml` file into your project folder:
+
+```yaml
+version: 1
+
+analyzer:
+  languages: [python, javascript, c]
+  exclude_paths:
+    - "tests/**"
+    - "vendor/**"
+    - "**/__pycache__/**"
+    - "*.generated.js"
+
+rules:
+  enabled:
+    - "SEC-*"
+    - "QUAL-*"
+  disabled:
+    - "QUAL-MISSING-DOCSTRING"
+
+thresholds:
+  fail_on_severity: HIGH
+  max_new_findings: 0
+
+reporting:
+  formats: [json, html]
+  rate_limiting_cooldown: 4
+```
+
+---
+
+# 👤 Target User Profiles & Workflows
+
+## 🧑‍💻 Security Engineer & Developer
+
+### Pre-Staging Audits
+Upload source code elements to the local sandbox interface to catch syntax errors and vulnerabilities before tracking modifications upstream.
+
+### Visual Line Mapping
+Trace vulnerabilities directly using left-aligned vertical line rails that point directly to the line causing the error.
+
+### Drop-In Code Patching
+Leverage instant, contextual code remediations to drop clean alternatives straight into development workflows.
+
+---
+
+## 📊 Engineering Lead / AppSec Manager
+
+### Metrics Standardization
+Export unified JSON compliance reports to monitor application risk metrics across development sprints.
+
+### Quality Gates Enforcement
+Define custom rule thresholds to block builds or flag critical vulnerabilities early in your CI pipelines.
+
+### Cost & Resource Controls
+Configure explicit pacing and throttling rules to extract maximum performance from free API resource quotas.
+
+---
+
+# 🤝 Contributing & Extension Guide
+
+## Running Verification Tests
+
+Ensure that any new syntax rules or structural logic additions match performance standards before submitting a pull request:
+
+```bash
+pytest tests/
+```
+
+## How to Add an Automated Security Rule
+
+### Define Node Signatures
+Locate or append target programming patterns inside:
+
+```text
+sast_tool/engine/rules/
+```
+
+### Write the Logic
+Use the tree-sitter node capture tree to evaluate node properties, arguments, and assignment operators.
+
+### Register the Metadata
+Assign a unique tracking code (`SEC-PY-003`) inside the rule manifest configuration dictionary.
+
+### Validate Changes
+Append validation test cases inside your test folder to confirm that matches catch errors reliably without introducing regression loops.
+

@@ -23,7 +23,7 @@ async def serve_dashboard(request: Request):
     """Renders the main dashboard panel homepage view with empty contexts initialized."""
     return templates.TemplateResponse(
         request,
-        "index.html", 
+        "index.html",
         {"active_tab": "sast", "sast_findings": [], "dast_findings": []}
     )
 
@@ -33,27 +33,27 @@ async def handle_sast_scan(request: Request, file: UploadFile = File(...)):
     """Receives a file upload, executes an AST code scan, and appends parallel AI explanations."""
     temp_filename = f"temp_{file.filename}"
     findings = []
-    
+
     try:
         contents = await file.read()
         with open(temp_filename, "wb") as f:
             f.write(contents)
-            
+
         scanner = Scanner()
         findings = await scanner.scan_directory(temp_filename)
-        
+
         if findings:
             try:
                 from sast_tool.engine.remediation import RemediationEngine
                 ai_engine = RemediationEngine()
-                
-                # Process each vulnerability one by one systematically
+
+                # Process each vulnerability one by one with a safe cooldown
+                # between requests to respect the free-tier RPM quota
                 for f in findings:
                     await ai_engine.enrich_finding(f)
-                    # Force a solid 3-second cooldown between cards to let the free tier RPM settle
-                    await asyncio.sleep(3)
+                    await asyncio.sleep(15)  # Increased from 3s → 15s to avoid 429s
+
             except Exception as ai_err:
-                print(f"[DASHBOARD AI WARNING] Enrichment pipeline exception: {ai_err}")
                 print(f"[DASHBOARD AI WARNING] Enrichment pipeline exception: {ai_err}")
                 for f in findings:
                     if isinstance(f, dict):
@@ -69,13 +69,17 @@ async def handle_sast_scan(request: Request, file: UploadFile = File(...)):
                     finding["ai_remediation"] = "No supplementary analysis generated."
             else:
                 finding.location.file = file.filename
-                if not hasattr(finding, 'ai_remediation') or not finding.ai_remediation:
+                if not hasattr(finding, "ai_remediation") or not finding.ai_remediation:
                     finding.ai_remediation = "No supplementary analysis generated."
 
-        # Sort findings array inline based on physical line sequence vectors
-        findings.sort(key=lambda x: int(x["location"]["line"]) if isinstance(x, dict) else int(getattr(x.location, "line", 0) or 0))
-        
-        # Explicitly map complex class objects into raw dictionaries for template serialization safety
+        # Sort findings by physical line number
+        findings.sort(
+            key=lambda x: int(x["location"]["line"])
+            if isinstance(x, dict)
+            else int(getattr(x.location, "line", 0) or 0)
+        )
+
+        # Serialize Finding objects into plain dicts for template rendering
         serializable_sast = []
         for f in findings:
             if isinstance(f, dict):
@@ -89,12 +93,12 @@ async def handle_sast_scan(request: Request, file: UploadFile = File(...)):
                     "location": {
                         "file": getattr(f.location, "file", file.filename),
                         "line": getattr(f.location, "line", "N/A"),
-                        "column": getattr(f.location, "column", 0)
+                        "column": getattr(f.location, "column", 0),
                     },
-                    "ai_remediation": getattr(f, "ai_remediation", "")
+                    "ai_remediation": getattr(f, "ai_remediation", ""),
                 })
         findings = serializable_sast
-            
+
     except Exception as e:
         findings = [{
             "rule_id": "ENGINE-CRASH",
@@ -102,21 +106,21 @@ async def handle_sast_scan(request: Request, file: UploadFile = File(...)):
             "message": f"Breakdown during AST parsing sequence: {e}",
             "snippet": "Parser Pipeline Exception Context",
             "location": {"file": file.filename, "line": "N/A", "column": 0},
-            "ai_remediation": "Review the terminal console trace metrics to debug local parser runtime failures."
+            "ai_remediation": "Review the terminal console trace metrics to debug local parser runtime failures.",
         }]
     finally:
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
-            
+
     return templates.TemplateResponse(
         request,
-        "index.html", 
+        "index.html",
         {
-            "sast_findings": findings, 
-            "dast_findings": [], 
-            "active_tab": "sast", 
-            "scanned_file": file.filename
-        }
+            "sast_findings": findings,
+            "dast_findings": [],
+            "active_tab": "sast",
+            "scanned_file": file.filename,
+        },
     )
 
 
@@ -125,15 +129,15 @@ async def handle_dast_scan(request: Request, url: str = Form(...)):
     """Triggers the asynchronous web crawler and fuzzer mapping pipeline."""
     dast_findings = []
     pages_crawled = 0
-    
+
     try:
         crawler = DASTCrawler(url, max_depth=2)
         results = await crawler.start()
-        
+
         visited_pages = results.get("visited_pages", [])
         attack_surface_forms = results.get("attack_surface_forms", {})
         pages_crawled = len(visited_pages)
-        
+
         fuzzer = DASTScanner()
         async with aiohttp.ClientSession() as session:
             for page_url, forms in attack_surface_forms.items():
@@ -141,8 +145,8 @@ async def handle_dast_scan(request: Request, url: str = Form(...)):
                     findings = await fuzzer.scan_form(session, page_url, form)
                     if findings:
                         dast_findings.extend(findings)
-                        
-        # Clean up, normalize, and convert to plain serializable dicts
+
+        # Normalize and serialize DAST findings
         serializable_dast = []
         for index, finding in enumerate(dast_findings):
             if isinstance(finding, dict):
@@ -150,36 +154,40 @@ async def handle_dast_scan(request: Request, url: str = Form(...)):
                     "rule_id": finding.get("rule_id") or f"DAST-VULN-{index+1:03d}",
                     "severity": finding.get("severity", "HIGH"),
                     "message": finding.get("message", ""),
-                    "snippet": finding.get("snippet", "")
+                    "snippet": finding.get("snippet", ""),
                 }
             else:
-                severity_val = finding.severity.name if hasattr(finding.severity, "name") else str(finding.severity)
+                severity_val = (
+                    finding.severity.name
+                    if hasattr(finding.severity, "name")
+                    else str(finding.severity)
+                )
                 normalized = {
                     "rule_id": getattr(finding, "rule_id", "") or f"DAST-VULN-{index+1:03d}",
                     "severity": severity_val,
                     "message": getattr(finding, "message", ""),
-                    "snippet": getattr(finding, "snippet", "")
+                    "snippet": getattr(finding, "snippet", ""),
                 }
             serializable_dast.append(normalized)
-            
+
         dast_findings = serializable_dast
-                    
+
     except Exception as e:
         dast_findings = [{
             "rule_id": "DAST-CRASH",
             "severity": "HIGH",
             "message": f"Web crawler network trace failure: {str(e)}",
-            "snippet": f"Target Endpoint Vector: {url}"
+            "snippet": f"Target Endpoint Vector: {url}",
         }]
 
     return templates.TemplateResponse(
         request,
-        "index.html", 
+        "index.html",
         {
             "sast_findings": [],
-            "dast_findings": dast_findings, 
-            "active_tab": "dast", 
+            "dast_findings": dast_findings,
+            "active_tab": "dast",
             "scanned_url": url,
-            "pages_crawled": pages_crawled
-        }
+            "pages_crawled": pages_crawled,
+        },
     )

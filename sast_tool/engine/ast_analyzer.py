@@ -1,11 +1,11 @@
 # sast_tool/engine/ast_analyzer.py
-from tree_sitter import Parser, Language # Added Language wrapper import
+from tree_sitter import Parser, Language
 import tree_sitter_python as tspython
 
 class ASTAnalyzer:
     """Transforms the tool from grep-based to logic-aware for Tree-sitter 0.23+"""
     def __init__(self):
-        # Fix: Explicitly wrap the PyCapsule inside the tree_sitter.Language instance constructor
+        # Explicitly wrap the PyCapsule inside the tree_sitter.Language instance constructor
         self.lang = Language(tspython.language())
         self.parser = Parser(self.lang)
 
@@ -15,31 +15,28 @@ class ASTAnalyzer:
 
     def _traverse_and_collect(self, node, sink_name: str, look_for_attribute: bool) -> list:
         matches = []
-        
-        # Diagnostics to confirm your tree is generating nodes properly
-        if node.type in ["call", "identifier", "attribute"]:
-            try:
-                node_text = node.text.decode("utf-8") if node.text else ""
-                print(f"[DEBUG AST NODE] Found type: '{node.type}', Text: '{node_text}'")
-            except Exception:
-                pass
 
-        # Matching logic
         if node.type == "call":
             func_node = node.child_by_field_name("function")
             if func_node:
-                # Case A: Standalone calls (eval)
+                # Case A: Standalone execution sinks (e.g., eval("user_input"))
                 if not look_for_attribute and func_node.type == "identifier":
                     node_text = func_node.text.decode("utf-8") if func_node.text else ""
                     if node_text == sink_name:
                         matches.append((node, "fn"))
                 
-                # Case B: Attribute calls (os.system, subprocess.Popen)
+                # Case B: Multi-layer Attribute calls (e.g., os.system("id"))
                 elif look_for_attribute and func_node.type == "attribute":
+                    obj_node = func_node.child_by_field_name("object")
                     attr_node = func_node.child_by_field_name("attribute")
-                    if attr_node:
-                        node_text = attr_node.text.decode("utf-8") if attr_node.text else ""
-                        if node_text == sink_name:
+                    
+                    if obj_node and attr_node:
+                        obj_text = obj_node.text.decode("utf-8") if obj_node.text else ""
+                        attr_text = attr_node.text.decode("utf-8") if attr_node.text else ""
+                        full_signature = f"{obj_text}.{attr_text}"
+                        
+                        # Full path validation (e.g., "os.system" matches signature targets precisely)
+                        if attr_text == sink_name or full_signature == sink_name:
                             matches.append((node, "attr"))
                             
         for child in node.children:

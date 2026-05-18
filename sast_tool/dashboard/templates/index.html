@@ -107,7 +107,7 @@
                                 </div>
                                 <div class="bg-black/30 rounded-lg p-3 text-xs text-slate-200 border border-purple-500/10 leading-relaxed min-h-[68px]">
                                     {% if finding.ai_remediation is defined and finding.ai_remediation %}
-                                        {{ finding.ai_remediation }}
+                                        {{ finding.ai_remediation | safe }}
                                     {% else %}
                                         <span class="text-slate-500 italic">No configuration context data mapped for this node.</span>
                                     {% endif %}
@@ -186,7 +186,6 @@
         }
 
         function exportScanResults() {
-            // Pull raw strings from hidden DOM elements safely
             const sastContainer = document.getElementById('raw-sast-data');
             const dastContainer = document.getElementById('raw-dast-data');
             

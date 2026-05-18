@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def export_to_sarif(findings, output_file="results.sarif"):
     """
     Converts SAST engine finding objects into standard GitHub-readable SARIF format.
-    Guarantees writing an empty skeleton log even if findings is empty.
+    Guarantees writing a valid skeleton log even if findings is empty or None.
     """
     sarif_log = {
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
@@ -37,14 +37,12 @@ def export_to_sarif(findings, output_file="results.sarif"):
     
     seen_rules = set()
     
-    # Handle safe iterations if findings is None or empty
     if findings:
         for f in findings:
             try:
                 rule_id = getattr(f, "rule_id", "UNKNOWN-RULE")
                 message_text = getattr(f, "message", "Security vulnerability flagged.")
                 
-                # Register rule definition
                 if rule_id not in seen_rules:
                     sarif_log["runs"][0]["tool"]["driver"]["rules"].append({
                         "id": rule_id,
@@ -53,7 +51,6 @@ def export_to_sarif(findings, output_file="results.sarif"):
                     })
                     seen_rules.add(rule_id)
                 
-                # Safely parse file location parameters
                 file_path = "unknown_file.py"
                 line_num = 1
                 col_num = 1
@@ -81,14 +78,15 @@ def export_to_sarif(findings, output_file="results.sarif"):
                 }
                 sarif_log["runs"][0]["results"].append(result_node)
             except Exception as err:
-                print(f"[EXPORTER WARNING] Skipping corrupted finding entry: {err}")
+                print(f"[EXPORTER WARNING] Skipping corrupted entry: {err}")
 
     try:
         with open(output_file, "w") as out:
             json.dump(sarif_log, out, indent=2)
-        print(f"💾 SARIF report successfully compiled and saved to: {output_file}")
+        logger.info(f"💾 SARIF report successfully compiled and saved to: {output_file}")
     except Exception as e:
-        print(f"❌ CRITICAL: Failed to write SARIF file to disk: {e}")
+        print(f"❌ CRITICAL: Failed to write SARIF file: {e}")
+
 
 async def run_web_dast(url: str):
     """Asynchronous pipeline to execute the black-box crawling and fuzzing suite."""
@@ -130,8 +128,7 @@ def run_scan(target_path: str, output_format: str):
         logger.error(f"Execution boundary breakdown during analysis: {e}")
         scan_failed = True
 
-    # 1. ALWAYS execute this, even if the scanner crashed or threw an exception!
-    # This guarantees that 'results.sarif' is written to disk for GitHub Actions.
+    # This always executes if 'json' format is requested, even if the scan failed or threw errors
     if output_format == "json":
         export_to_sarif(findings)
         
@@ -149,10 +146,9 @@ def run_scan(target_path: str, output_format: str):
         print(f"  🔍 Snippet: {finding.snippet}")
         print("-" * 60)
 
+
 def main():
     parser = argparse.ArgumentParser(description="Application Security Testing Platform Engine")
-    
-    # Arguments supporting both path-based code scanning and url-based deployment testing
     parser.add_argument(
         "--path", type=str, help="Path to local target directory/file for structural AST analysis"
     )
@@ -170,7 +166,6 @@ def main():
     elif args.path:
         run_scan(args.path, args.format)
     else:
-        # Fallback to menu directions if flags are empty
         parser.print_help()
 
 if __name__ == "__main__":

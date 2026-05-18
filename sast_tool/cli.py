@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 def export_to_sarif(findings, output_file="results.sarif"):
     """
-    Converts SAST engine finding objects into standard GitHub-readable SARIF format
-    so vulnerabilities display natively under the repo's Security tab.
+    Converts SAST engine finding objects into standard GitHub-readable SARIF format.
+    Guarantees writing an empty skeleton log even if findings is empty.
     """
     sarif_log = {
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
@@ -36,38 +36,59 @@ def export_to_sarif(findings, output_file="results.sarif"):
     }
     
     seen_rules = set()
-    for f in findings:
-        # Register rule definitions to satisfy the SARIF specification
-        if f.rule_id not in seen_rules:
-            sarif_log["runs"][0]["tool"]["driver"]["rules"].append({
-                "id": f.rule_id,
-                "shortDescription": {"text": getattr(f, "name", f.message)},
-                "properties": {"precision": "high"}
-            })
-            seen_rules.add(f.rule_id)
-            
-        # Map structural findings to physical repository code locations
-        result_node = {
-            "ruleId": f.rule_id,
-            "message": {"text": f.message},
-            "locations": [
-                {
-                    "physicalLocation": {
-                        "artifactLocation": {"uri": f.location.file},
-                        "region": {
-                            "startLine": f.location.line,
-                            "startColumn": f.location.column + 1
-                        }
-                    }
-                }
-            ]
-        }
-        sarif_log["runs"][0]["results"].append(result_node)
-        
-    with open(output_file, "w") as out:
-        json.dump(sarif_log, out, indent=2)
-    logger.info(f"SARIF report successfully compiled and saved to: {output_file}")
+    
+    # Handle safe iterations if findings is None or empty
+    if findings:
+        for f in findings:
+            try:
+                rule_id = getattr(f, "rule_id", "UNKNOWN-RULE")
+                message_text = getattr(f, "message", "Security vulnerability flagged.")
+                
+                # Register rule definition
+                if rule_id not in seen_rules:
+                    sarif_log["runs"][0]["tool"]["driver"]["rules"].append({
+                        "id": rule_id,
+                        "shortDescription": {"text": message_text},
+                        "properties": {"precision": "high"}
+                    })
+                    seen_rules.add(rule_id)
+                
+                # Safely parse file location parameters
+                file_path = "unknown_file.py"
+                line_num = 1
+                col_num = 1
+                
+                if hasattr(f, "location") and f.location:
+                    if hasattr(f.location, "file") and f.location.file:
+                        file_path = str(f.location.file).replace("./", "", 1) if str(f.location.file).startswith("./") else str(f.location.file)
+                    line_num = getattr(f.location, "line", 1) or 1
+                    col_num = getattr(f.location, "column", 0) or 0
 
+                result_node = {
+                    "ruleId": rule_id,
+                    "message": {"text": message_text},
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {"uri": file_path},
+                                "region": {
+                                    "startLine": int(line_num),
+                                    "startColumn": int(col_num) + 1
+                                }
+                            }
+                        }
+                    ]
+                }
+                sarif_log["runs"][0]["results"].append(result_node)
+            except Exception as err:
+                print(f"[EXPORTER WARNING] Skipping corrupted finding entry: {err}")
+
+    try:
+        with open(output_file, "w") as out:
+            json.dump(sarif_log, out, indent=2)
+        print(f"💾 SARIF report successfully compiled and saved to: {output_file}")
+    except Exception as e:
+        print(f"❌ CRITICAL: Failed to write SARIF file to disk: {e}")
 
 async def run_web_dast(url: str):
     """Asynchronous pipeline to execute the black-box crawling and fuzzing suite."""
@@ -99,30 +120,34 @@ def run_scan(target_path: str, output_format: str):
     """Core code directory structural AST scanning pipeline."""
     logger.info(f"Initializing analyzer sequence against: {target_path}")
     scanner = Scanner()
+    findings = []
+    scan_failed = False
     
     try:
         logger.info(f"Starting scan for target: {target_path}")
         findings = asyncio.run(scanner.scan_directory(target_path))
-        
-        # 1. ALWAYS write the SARIF file if requested, even if findings list is empty!
-        # This keeps the GitHub Action from complaining that the file doesn't exist.
-        if output_format == "json":
-            export_to_sarif(findings)
-        
-        if not findings:
-            print("\n✅ Clean code scan! No security vulnerabilities identified.")
-            return
-
-        print(f"\n🚨 Identified {len(findings)} potential security vulnerabilities:\n")
-        for finding in findings:
-            print(f"[{finding.severity.name}] {finding.rule_id}: {finding.message}")
-            print(f"  📍 File: {finding.location.file} (Line {finding.location.line}, Column {finding.location.column})")
-            print(f"  🔍 Snippet: {finding.snippet}")
-            print("-" * 60)
-            
     except Exception as e:
-        logger.error(f"Execution boundary breakdown: {e}")
+        logger.error(f"Execution boundary breakdown during analysis: {e}")
+        scan_failed = True
+
+    # 1. ALWAYS execute this, even if the scanner crashed or threw an exception!
+    # This guarantees that 'results.sarif' is written to disk for GitHub Actions.
+    if output_format == "json":
+        export_to_sarif(findings)
+        
+    if scan_failed:
         sys.exit(1)
+        
+    if not findings:
+        print("\n✅ Clean code scan! No security vulnerabilities identified.")
+        return
+
+    print(f"\n🚨 Identified {len(findings)} potential security vulnerabilities:\n")
+    for finding in findings:
+        print(f"[{finding.severity.name}] {finding.rule_id}: {finding.message}")
+        print(f"  📍 File: {finding.location.file} (Line {finding.location.line}, Column {finding.location.column})")
+        print(f"  🔍 Snippet: {finding.snippet}")
+        print("-" * 60)
 
 def main():
     parser = argparse.ArgumentParser(description="Application Security Testing Platform Engine")

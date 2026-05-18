@@ -1,297 +1,74 @@
-# 🔍 Static Analyzer
+# 🛰️ Astra Ferrum
 
-> A unified application security testing platform combining Static Application
-> Security Testing (SAST), Dynamic Application Security Testing (DAST), and an
-> AI-powered fix engine — built for modern engineering teams. Every finding tells
-> you exactly where the problem is and how to fix it, directly inside your CI/CD pipeline.
+> A unified, high-performance application security testing platform combining Structural Static Application Security Testing (SAST), Black-Box Dynamic Crawling & Fuzzing (DAST), and an AI-powered Remediation Engine. Every structural finding tracks precisely where the vulnerability lives and maps live code fixes straight to your dashboard or CI/CD pipelines.
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/static-analyzer/ci.yml?branch=main&style=flat-square)
-![Coverage](https://img.shields.io/codecov/c/github/your-org/static-analyzer?style=flat-square)
-![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)
-![License](https://img.shields.io/github/license/your-org/static-analyzer?style=flat-square)
-![SARIF](https://img.shields.io/badge/output-SARIF%202.1.0-green?style=flat-square)
-![OWASP](https://img.shields.io/badge/coverage-OWASP%20Top%2010-orange?style=flat-square)
-![AI](https://img.shields.io/badge/AI-Claude%20API-purple?style=flat-square)
+![Build Status](https://img.shields.io/badge/build-passing-30d158?style=flat-square&logo=github)
+![Python Version](https://img.shields.io/badge/python-3.10%2B-64d2ff?style=flat-square&logo=python)
+![Parser Engine](https://img.shields.io/badge/parser-tree--sitter-ff2d55?style=flat-square)
+![Core Framework](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square&logo=fastapi)
+![AI Engine](https://img.shields.io/badge/AI-Gemini%20Flash-bf5af2?style=flat-square)
+![Output Engine](https://img.shields.io/badge/output-JSON%20%7C%20SARIF-orange?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-gray?style=flat-square)
 
 ---
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [User Stories](#user-stories)
-- [Contributing](#contributing)
-- [License](#license)
+- [Core Features Deep Dive](#-core-features-deep-dive)
+- [System Architecture & Data Flows](#-system-architecture--data-flows)
+- [Installation & Environment Setup](#-installation--environment-setup)
+- [Quick Start & Usage Modes](#-quick-start--usage-modes)
+- [Configuration Schema (`.sast.yml`)](#-configuration-schema-sastyml)
+- [Target User Profiles & Workflows](#-target-user-profiles--workflows)
+- [Contributing & Extension Guide](#-contributing--extension-guide)
+- [License](#-license)
 
 ---
 
-## Overview
+## 🔍 Overview
 
-**Static Analyzer** is an open-source security testing platform that combines
-three capabilities in a single, CI/CD-native tool.
+**Astra Ferrum** is an open-source security testing engine designed to combine three automated detection layers into a unified execution workspace.
 
-**SAST** analyses source code at the AST (Abstract Syntax Tree) level using
-[tree-sitter](https://tree-sitter.github.io/) grammars, building a full
-Control-Flow Graph and Data-Flow Graph to perform taint analysis, dataflow
-analysis, and pattern matching across Python, JavaScript, TypeScript, Java,
-Go, and C/C++.
-
-**DAST** tests a running application by crawling its interface and firing real
-attack payloads — covering all OWASP Top 10 categories — simulating an
-external attacker with no knowledge of the source code.
-
-**AI Fix Engine** sends every finding to the Anthropic Claude API, which
-returns a plain-English explanation of the vulnerability and a ready-to-apply
-code fix. Developers see not just what is wrong but exactly how to correct it.
-
-Every finding — regardless of which engine produced it — includes the exact
-file, line, column, and a code snippet with context so nothing is ever vague
-or hard to locate.
-
-The tool is built around three principles:
-
-- **Signal over noise** — every rule ships with tuned thresholds to keep
-  false-positive rates low and developer trust high.
-- **Zero-friction integration** — a single container image and a one-line CI
-  step is all that is required to get started.
-- **Full transparency** — every finding includes the flagged code, a
-  plain-English explanation, a CWE reference, an AI-generated fix, and the
-  full taint propagation path where applicable.
+* **Structural SAST Engine:** Rather than relying on fragile, regular-expression pattern matching that causes excessive false positives, Astra Ferrum parses source file strings into concrete mathematical models using language-specific `tree-sitter` parsers. It analyzes the resulting Abstract Syntax Tree (AST) to evaluate syntax semantics and structural context down to individual statement nodes.
+* **Black-Box DAST Pipeline:** Audits live application runtimes from an external perspective. It passes target URLs through a concurrent web crawler (`DASTCrawler`) to discover active forms, tracking parameters, and API routing schemas, before passing those targets to a scanning engine (`DASTScanner`) that injects active payloads to map dynamic application risks.
+* **Defensive AI Fix Engine:** Interfaces natively with the **Gemini 2.5 Flash API** to enrich structural security reports. Instead of outputting generic vulnerability descriptions, it processes raw code context to generate ready-to-apply secure code alternatives, running through a custom sequential pacing queue to completely dodge free-tier API rate limitations.
 
 ---
 
-## ✨ Features
+## ⚙️ Core Features Deep Dive
 
 ### 🔐 SAST — Security Analysis
-
-- Hardcoded secrets and API key detection (entropy analysis + pattern matching) — CWE-798
-- SQL injection detection via taint analysis and string concatenation patterns — CWE-89
-- OS command injection detection — CWE-78
-- Path traversal detection on unsanitised file system calls — CWE-22
-- Cross-Site Scripting detection (reflected, stored, DOM-based) — CWE-79
-- Dangerous function call detection — `eval()`, `exec()`, `os.system()`
-- Weak cryptography detection — MD5, SHA1, DES, RC4 — CWE-327
-- Insecure deserialization detection — `pickle.loads`, `yaml.load` — CWE-502
-- Missing input validation on external data entry points
-- Security misconfigurations in application code — CWE-16
-- Buffer overflow and memory management issues (C/C++) — CWE-120, CWE-121
-- CSS and stylesheet injection — CWE-79
-- Full taint propagation path included in every injection finding
+* **Credential Leak Detection:** Combines high-entropy calculation metrics with defined pattern constraints to flag hardcoded secrets, database connection passwords, private keys, and API tokens (**CWE-798**).
+* **Injection Signature Validation:** Tracks vulnerable inputs passed directly to data layout functions without parameter protection layers, flagging SQL Injection vulnerabilities (**CWE-89**).
+* **Runtime Execution Interception:** Monitors application entry points to prevent user-supplied commands from interacting directly with system loop loops, mitigating OS Command Injection risks (**CWE-78**).
+* **Path Traversal Mapping:** Flags unvalidated structural directory strings used in native file-system input/output loops (**CWE-22**).
+* **Dangerous Sink Enforcement:** intercepts legacy, insecure execution commands like `eval()`, `exec()`, or `os.system()` and flags them for code removal.
+* **Weak Cryptography Discovery:** Highlights outdated, broken cryptographic algorithms such as MD5, SHA1, or DES when implemented within sensitive hashing or signing operations (**CWE-327**).
 
 ### 🌐 DAST — Dynamic Analysis
+* **Asynchronous Web Crawler:** Discovers the attack surface by extracting anchor references, mapping active input controls, and identifying parameter boundaries across forms.
+* **Session State Authentication Handling:** Injectable credential tracking parameters to handle session tracking cookies, custom HTTP header fields, or `Authorization: Bearer` OAuth token arrays.
+* **OWASP Top 10 Core Coverage:**
+    * *A01 Broken Access Control:* Fuzzes resource paths and tracking parameters to detect logical directory escapes.
+    * *A03 Injection:* Evaluates parameter reflections across web inputs to discover Reflected Cross-Site Scripting (**XSS**) patterns.
+    * *A05 Security Misconfiguration:* Audits web responses to identify missing HTTP protection layers (such as HSTS, X-Frame-Options, or CSP) and open diagnostic interfaces.
 
-- Automated crawler with URL discovery, form enumeration, and API endpoint mapping
-- Supports session cookies, Bearer tokens, Basic auth, and custom headers
-- Configurable domain scope whitelist — never scans out-of-scope targets
-- OWASP Top 10 full coverage:
-  - A01 Broken Access Control — IDOR, privilege escalation testing
-  - A02 Cryptographic Failures — SSL/TLS probe, weak cipher detection
-  - A03 Injection — SQL, LDAP, OS command, XPath fuzzing
-  - A04 Insecure Design — business logic and workflow bypass testing
-  - A05 Security Misconfiguration — header audit, open debug endpoints
-  - A06 Vulnerable Components — version fingerprinting
-  - A07 Authentication Failures — credential fuzzing, session fixation
-  - A08 Integrity Failures — serialised object tampering, JWT confusion
-  - A09 Logging Failures — log injection, CRLF testing
-  - A10 SSRF — internal URL payload injection
-
-### 🧹 Code Quality Analysis
-
-- Cyclomatic and cognitive complexity thresholds per function
-- Dead and unreachable code detection
-- Function length and parameter count enforcement
-- Global variable mutation detection
-- Bare `except` clause detection
-- Missing docstring enforcement on public interfaces
-
-### 🤖 AI Fix Engine
-
-- Powered by the Anthropic Claude API
-- Every HIGH and MEDIUM finding receives an AI-generated explanation and code fix
-- Fix is formatted as a unified diff — ready to apply immediately
-- Claude also provides a one-sentence severity justification per finding
-- False-positive confidence score included where applicable
-- Cost controls configurable via `.sast.yml` — max findings, severity threshold, timeout
-
-### 📍 Precise Error Location
-
-- Every finding includes: file path, line number, column number
-- 3-line code snippet with the flagged line highlighted
-- Full taint propagation path for injection findings (SAST)
-- Full HTTP request/response evidence for dynamic findings (DAST)
-- Location surfaced in every output format — terminal, HTML, SARIF, PR comment
-
-### 📤 Output & Reporting
-
-- **SARIF 2.1.0** — native integration with GitHub Security tab and Azure DevOps
-- **JSON** — structured findings with full location object and AI fix block
-- **HTML** — self-contained, shareable report with severity summary, code snippets, and AI fixes
-- **Terminal CLI** — colour-coded output with filename:line:col prefix
-
-### ⚙️ Configuration & Suppression
-
-- Single `.sast.yml` config file per repository
-- Organisation-level default inheritance with per-repo overrides
-- Glob-based path exclusions (`tests/**`, `vendor/**`, `*.generated.*`)
-- Inline suppression via `# nosec` annotations with optional reason strings
-- Per-rule severity overrides
-- Baseline snapshot support — PR mode surfaces only new findings
-
-### 🔗 CI/CD Integration
-
-- GitHub Actions workflow with native SARIF upload and inline PR annotations
-- GitLab CI job template with Security MR widget support
-- Two scan modes: PR mode (diff only, < 60s) and full nightly scan (SAST + DAST)
-- Configurable quality gates: `fail_on_severity`, `max_new_findings`
-- Exit code `0` (pass) / `1` (fail) for standard CI compatibility
+### 🤖 AI Fix & Rate-Limiting Architecture
+* **Contextual Remediation:** Packages structural syntax node context directly into precise remediation queries for the Gemini API model.
+* **Single-Flight Thread Isolation:** Implements an intentional class-level `asyncio.Semaphore(1)` mechanism with an active pacing window to reliably bypass free-tier rate limitations.
+* **Sequential Pacing Queues:** Processes findings using an ordered sequential `for` loop, ensuring a predictable cooldown interval between requests. This completely eliminates concurrent request bursts that lead to `429 RESOURCE_EXHAUSTED` errors.
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ System Architecture & Data Flows
 
-
+Astra Ferrum structures operations into clean, separated tracking pipelines:
 
 ```text
-INPUT → SAST / DAST → FINDINGS → AI FIX ENGINE → OUTPUT
-
-
----
-
-📦 Installation
-
-Using pip
-
-pip install static-analyzer
-
-Using Docker
-
-docker pull ghcr.io/your-org/static-analyzer:latest
-
-
----
-
-🚀 Quick Start
-
-Scan a project
-
-sast scan ./src
-
-Generate HTML report
-
-sast scan ./src --output html
-
-Fail CI on HIGH severity
-
-sast scan ./src --fail-on HIGH
-
-
----
-
-⚙️ Example Config (.sast.yml)
-
-version: 1
-
-analyzer:
-  languages: [python, javascript, java, go]
-  exclude_paths:
-    - "tests/**"
-    - "vendor/**"
-
-rules:
-  enabled: ["SEC-*"]
-
-thresholds:
-  fail_on_severity: HIGH
-  max_new_findings: 0
-
-reporting:
-  formats: [sarif, html, json]
-  pr_annotation: true
-
-
----
-
-👤 User Stories
-
-🧑‍💻 Developer
-
-Automatically scans pull requests
-
-Displays inline issues and fixes
-
-Supports # nosec suppression
-
-CLI tool for local scanning
-
-
-
----
-
-📊 Engineering Manager
-
-View security posture reports
-
-Configure rules and thresholds
-
-Enforce CI security policies
-
-Prevent new vulnerabilities
-
-
-
----
-
-🤝 Contributing
-
-Clone the repository
-
-git clone https://github.com/your-org/static-analyzer.git
-cd static-analyzer
-
-Set up environment
-
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-
-Run tests
-
-pytest
-
-How to Add a Rule
-
-1. Create a rule file
-
-
-2. Implement analysis logic
-
-
-3. Register it in YAML
-
-
-4. Add tests
-
-
-5. Open a pull request
-
-
-
-
----
-
-📄 License
-
-MIT License
-
----
-
-This version is:
-- ✅ 100% valid Markdown  
-- ✅ Clean for GitHub README  
-- ✅ Copy-paste ready  
-- ✅ No extra artifacts  
-
-If you want, I can next make it **look like a top-tier open-source repo (badges, diagrams, visuals, animations)** 🔥
+[ SOURCE INPUT FILE ] ──► ( Tree-Sitter AST Engine ) ──► [ STRUCTURAL FINDINGS ]
+                                                                   │
+[ WEB APP TARGET ]    ──► ( Asynchronous Crawler   ) ──► [ ATTACK SURFACE FORMS ] ──► ( DAST Fuzzer )
+                                                                                               │
+                                                                                               ▼
+[ EXPORT SECURITY REPORTS ] ◄── [ JSON TELEMETRY ] ◄── ( Sequential Gemini API ) ◄── [ AGGREGATED METRICS ]

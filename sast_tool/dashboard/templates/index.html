@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra Ferrum Security Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0b0f14; 
+            color: #94a3b8; 
+        }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .cyber-panel {
+            background-color: #131a22;
+            border: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        
+        <header class="mb-8 flex justify-between items-center border-b border-cyan-500/20 pb-5">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl drop-shadow-[0_0_10px_#64d2ff]">🛰️</span>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                        Astra Ferrum 
+                        <span class="text-[10px] font-bold bg-[#ff2d55]/20 text-[#ff2d55] px-2 py-0.5 rounded border border-[#ff2d55]/40 uppercase tracking-widest drop-shadow-[0_0_8px_#ff2d55]">
+                            v1.0 Core
+                        </span>
+                    </h1>
+                    <p class="text-cyan-400/60 text-xs mt-0.5 uppercase tracking-wider font-semibold">Unified Application Security Testing Platform (SAST/DAST)</p>
+                </div>
+            </div>
+            <div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#30d158]/10 text-[#30d158] border border-[#30d158]/40 drop-shadow-[0_0_10px_rgba(48,209,88,0.2)]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#30d158] mr-1.5 animate-pulse"></span> Engine Online
+                </span>
+            </div>
+        </header>
+
+        <div class="flex gap-6 mb-6 border-b border-gray-800 pb-px">
+            <button onclick="switchTab('sast')" id="tab-btn-sast" class="pb-2.5 px-1 font-bold text-sm transition-all border-b-2 border-[#64d2ff] text-[#64d2ff] drop-shadow-[0_0_10px_rgba(100,210,255,0.3)] cursor-pointer">
+                🔍 Structural AST Code Scan (SAST)
+            </button>
+            <button onclick="switchTab('dast')" id="tab-btn-dast" class="pb-2.5 px-1 font-bold text-sm transition-all border-b-2 border-transparent text-gray-500 hover:text-gray-400 cursor-pointer">
+                📦 Black-Box App Crawler & Fuzzer (DAST)
+            </button>
+        </div>
+
+        <div id="section-sast" class="{% if active_tab != 'sast' %}hidden{% endif %}">
+            <div class="cyber-panel rounded-xl p-5 mb-6 flex items-center justify-between shadow-lg shadow-black/40 border border-cyan-500/10">
+                <div class="w-full">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-3">Analyze Source File Codebase</h3>
+                    <form action="/scan/sast" method="POST" enctype="multipart/form-data" class="flex items-center justify-between w-full gap-4">
+                        <div class="flex items-center border border-slate-700/60 rounded-lg px-3 py-2 bg-black/40 max-w-xl w-full focus-within:border-cyan-500/50 transition-all">
+                            <input type="file" name="file" required class="block w-full text-xs text-slate-400 file:mr-4 file:py-1 file:px-3 file:rounded file:border file:border-slate-700 file:text-xs file:font-bold file:bg-[#1e293b] file:text-gray-200 hover:file:bg-slate-700 file:cursor-pointer" />
+                        </div>
+                        <button type="submit" class="bg-[#ff2d55] hover:bg-[#ff3b64] text-white font-extrabold px-6 py-2.5 rounded-lg transition-all text-xs tracking-widest shadow-md shadow-[#ff2d55]/20 uppercase shrink-0 drop-shadow-[0_0_8px_rgba(255,45,85,0.4)] cursor-pointer">
+                            Run Code Engine
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if scanned_file %}
+            <div class="mb-4 text-xs text-slate-400">Analysis complete for: <span class="text-[#64d2ff] font-bold drop-shadow-[0_0_5px_rgba(100,210,255,0.2)]">{{ scanned_file }}</span></div>
+            
+            {% if sast_findings %}
+                <div class="space-y-4">
+                    {% for finding in sast_findings %}
+                    
+                    <div class="flex gap-4 items-stretch">
+                        
+                        <div class="w-14 flex-shrink-0 flex items-start pt-3 justify-center border-r border-slate-800/60 mr-2">
+                            <span class="text-xs font-bold text-[#64d2ff] tracking-wide drop-shadow-[0_0_4px_rgba(100,210,255,0.4)]">
+                                Line {% if finding.location is defined and finding.location.line is defined %}{{ finding.location.line }}{% else %}N/A{% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                            
+                            <div class="cyber-panel rounded-xl p-5 flex flex-col justify-between shadow-md border-l-2 {% if finding.severity.name is defined and finding.severity.name == 'CRITICAL' or finding.severity == 'CRITICAL' %}border-l-[#ff453a] shadow-[#ff453a]/5 border-r-[#ff453a]/10{% else %}border-l-[#ff9f0a] shadow-[#ff9f0a]/5 border-r-[#ff9f0a]/10{% endif %}">
+                                <div class="mb-3">
+                                    <div class="text-[10px] font-extrabold tracking-widest {% if finding.severity.name is defined and finding.severity.name == 'CRITICAL' or finding.severity == 'CRITICAL' %}text-[#ff453a]{% else %}text-[#ff9f0a]{% endif %} uppercase mb-1">
+                                        {{ finding.rule_id }} • {% if finding.severity.name is defined %}{{ finding.severity.name }}{% else %}{{ finding.severity }}{% endif %}
+                                    </div>
+                                    <h4 class="text-white font-bold text-sm leading-snug">{{ finding.message }}</h4>
+                                </div>
+                                <pre class="bg-black/50 rounded-lg p-3 text-xs text-[#ff9f0a] border border-orange-500/10 overflow-x-auto font-medium shadow-inner"><code>{{ finding.snippet }}</code></pre>
+                            </div>
+                            
+                            <div class="cyber-panel rounded-xl p-5 flex flex-col justify-between shadow-md border-l-2 border-l-[#bf5af2] shadow-[#bf5af2]/5 border-r-[#bf5af2]/10">
+                                <div class="mb-3">
+                                    <div class="text-[10px] font-extrabold tracking-widest text-[#bf5af2] uppercase mb-1 flex items-center gap-1.5 drop-shadow-[0_0_4px_rgba(191,90,242,0.3)]">
+                                        ✨ Gemini AI Remediation Guidance
+                                    </div>
+                                </div>
+                                <div class="bg-black/30 rounded-lg p-3 text-xs text-slate-200 border border-purple-500/10 leading-relaxed min-h-[68px]">
+                                    {% if finding.ai_remediation is defined and finding.ai_remediation %}
+                                        {{ finding.ai_remediation }}
+                                    {% else %}
+                                        <span class="text-slate-500 italic">No configuration context data mapped for this node.</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="cyber-panel text-[#30d158] rounded-xl p-6 text-center text-xs font-semibold bg-[#30d158]/5 border border-[#30d158]/30 drop-shadow-[0_0_10px_rgba(48,209,88,0.1)]">
+                    ✨ Clean scan! No code-level vulnerability blocks identified.
+                </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <div id="section-dast" class="{% if active_tab != 'dast' %}hidden{% endif %}">
+            <div class="cyber-panel rounded-xl p-5 mb-6 border border-cyan-500/10">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-3">Target Web App Vector Scan</h3>
+                <form action="/scan/dast" method="POST" class="flex gap-4">
+                    <input type="url" name="url" placeholder="https://example.com" required class="bg-black/40 border border-slate-700/60 rounded-lg px-3 py-2 text-xs text-white w-full focus:outline-none focus:border-cyan-500/50" />
+                    <button type="submit" class="bg-[#ff2d55] hover:bg-[#ff3b64] text-white font-extrabold px-6 py-2.5 rounded-lg transition-all text-xs tracking-widest uppercase shrink-0 shadow-md drop-shadow-[0_0_8px_rgba(255,45,85,0.4)] cursor-pointer">
+                        Fuzz Application
+                    </button>
+                </form>
+            </div>
+
+            {% if scanned_url %}
+            <div class="mb-4 text-xs text-slate-400">Target: <span class="text-[#64d2ff] font-bold">{{ scanned_url }}</span> | Crawled <span class="text-white font-bold">{{ pages_crawled }}</span> pages.</div>
+            {% if dast_findings %}
+                <div class="space-y-4">
+                    {% for finding in dast_findings %}
+                    <div class="cyber-panel rounded-xl p-4 border-l-2 border-l-[#ff453a] shadow-md shadow-[#ff453a]/5">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] font-extrabold bg-[#ff453a]/10 text-[#ff453a] px-2 py-0.5 rounded border border-[#ff453a]/20">
+                                {{ finding.rule_id }} • {% if finding.severity.name is defined %}{{ finding.severity.name }}{% else %}{{ finding.severity }}{% endif %}
+                            </span>
+                            <span class="text-[10px] text-gray-500">Endpoint Discovery</span>
+                        </div>
+                        <h4 class="text-white font-bold text-sm mb-2">{{ finding.message }}</h4>
+                        <pre class="bg-black/30 rounded-lg p-3 text-xs text-slate-300 border border-gray-800/40 overflow-x-auto"><code>{{ finding.snippet }}</code></pre>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="cyber-panel text-[#30d158] rounded-xl p-6 text-center text-xs font-semibold bg-[#30d158]/5 border border-[#30d158]/30 drop-shadow-[0_0_10px_rgba(48,209,88,0.1)]">
+                    ✅ Attack surface verification passed. No active parameter reflection identified.
+                </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            const sections = ['sast', 'dast'];
+            sections.forEach(s => {
+                const secEl = document.getElementById(`section-${s}`);
+                const btnEl = document.getElementById(`tab-btn-${s}`);
+                if (s === tab) {
+                    secEl.classList.remove('hidden');
+                    btnEl.classList.add('border-[#64d2ff]', 'text-[#64d2ff]', 'drop-shadow-[0_0_10px_rgba(100,210,255,0.3)]');
+                    btnEl.classList.remove('border-transparent', 'text-gray-500');
+                } else {
+                    secEl.classList.add('hidden');
+                    btnEl.classList.remove('border-[#64d2ff]', 'text-[#64d2ff]', 'drop-shadow-[0_0_10px_rgba(100,210,255,0.3)]');
+                    btnEl.classList.add('border-transparent', 'text-gray-500');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

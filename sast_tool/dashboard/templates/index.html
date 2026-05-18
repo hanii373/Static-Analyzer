@@ -35,18 +35,24 @@
                     <p class="text-cyan-400/60 text-xs mt-0.5 uppercase tracking-wider font-semibold">Unified Application Security Testing Platform (SAST/DAST)</p>
                 </div>
             </div>
-            <div>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#30d158]/10 text-[#30d158] border border-[#30d158]/40 drop-shadow-[0_0_10px_rgba(48,209,88,0.2)]">
+            <div class="flex items-center gap-4">
+                {% if sast_findings or dast_findings %}
+                    <button onclick="exportScanResults()" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/10 text-[#64d2ff] border border-cyan-500/30 hover:bg-cyan-500/20 transition-all tracking-wider uppercase drop-shadow-[0_0_8px_rgba(100,210,255,0.2)] cursor-pointer">
+                        📥 Export Report
+                    </button>
+                {% endif %}
+                
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#30d158]/10 text-[#30d158] border border-[#30d158]/40 drop-shadow-[0_0_10px_rgba(48,209,88,0.2)]">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#30d158] mr-1.5 animate-pulse"></span> Engine Online
                 </span>
             </div>
         </header>
 
         <div class="flex gap-6 mb-6 border-b border-gray-800 pb-px">
-            <button onclick="switchTab('sast')" id="tab-btn-sast" class="pb-2.5 px-1 font-bold text-sm transition-all border-b-2 border-[#64d2ff] text-[#64d2ff] drop-shadow-[0_0_10px_rgba(100,210,255,0.3)] cursor-pointer">
+            <button onclick="switchTab('sast')" id="tab-btn-sast" class="pb-2.5 px-1 font-bold text-sm transition-all border-b-2 {% if active_tab == 'sast' %}border-[#64d2ff] text-[#64d2ff] drop-shadow-[0_0_10px_rgba(100,210,255,0.3)]{% else %}border-transparent text-gray-500 hover:text-gray-400{% endif %} cursor-pointer">
                 🔍 Structural AST Code Scan (SAST)
             </button>
-            <button onclick="switchTab('dast')" id="tab-btn-dast" class="pb-2.5 px-1 font-bold text-sm transition-all border-b-2 border-transparent text-gray-500 hover:text-gray-400 cursor-pointer">
+            <button onclick="switchTab('dast')" id="tab-btn-dast" class="pb-2.5 px-1 font-bold text-sm transition-all border-b-2 {% if active_tab == 'dast' %}border-[#64d2ff] text-[#64d2ff] drop-shadow-[0_0_10px_rgba(100,210,255,0.3)]{% else %}border-transparent text-gray-500 hover:text-gray-400{% endif %} cursor-pointer">
                 📦 Black-Box App Crawler & Fuzzer (DAST)
             </button>
         </div>
@@ -158,6 +164,9 @@
 
     </div>
 
+    <div id="raw-sast-data" data-findings="{{ sast_findings | tojson | forceescape if sast_findings else '[]' }}" class="hidden"></div>
+    <div id="raw-dast-data" data-findings="{{ dast_findings | tojson | forceescape if dast_findings else '[]' }}" class="hidden"></div>
+
     <script>
         function switchTab(tab) {
             const sections = ['sast', 'dast'];
@@ -174,6 +183,61 @@
                     btnEl.classList.add('border-transparent', 'text-gray-500');
                 }
             });
+        }
+
+        function exportScanResults() {
+            // Pull raw strings from hidden DOM elements safely
+            const sastContainer = document.getElementById('raw-sast-data');
+            const dastContainer = document.getElementById('raw-dast-data');
+            
+            let staticAnalysis = [];
+            let dynamicAnalysis = [];
+
+            try {
+                if (sastContainer && sastContainer.dataset.findings) {
+                    const rawSast = JSON.parse(sastContainer.dataset.findings);
+                    staticAnalysis = rawSast.map(f => ({
+                        rule_id: f.rule_id || "SAST-VULN",
+                        severity: f.severity?.name || f.severity || "UNKNOWN",
+                        message: f.message || "",
+                        snippet: f.snippet || "",
+                        line: f.location?.line || "N/A"
+                    }));
+                }
+                
+                if (dastContainer && dastContainer.dataset.findings) {
+                    const rawDast = JSON.parse(dastContainer.dataset.findings);
+                    dynamicAnalysis = rawDast.map(f => ({
+                        rule_id: f.rule_id || "DAST-VULN",
+                        severity: f.severity?.name || f.severity || "UNKNOWN",
+                        message: f.message || "",
+                        snippet: f.snippet || ""
+                    }));
+                }
+            } catch (err) {
+                console.error("Failed to parse security telemetry metrics:", err);
+            }
+
+            const exportPayload = {
+                platform: "Astra Ferrum Security Center",
+                scan_timestamp: new Date().toISOString(),
+                metrics: {
+                    total_sast_issues: staticAnalysis.length,
+                    total_dast_issues: dynamicAnalysis.length
+                },
+                results: {
+                    static_analysis: staticAnalysis,
+                    dynamic_analysis: dynamicAnalysis
+                }
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 4));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `astra_ferrum_report_${Math.floor(Date.now() / 1000)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
     </script>
 </body>

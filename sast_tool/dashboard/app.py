@@ -5,18 +5,27 @@ import asyncio
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from dotenv import load_dotenv
+
+# Initialize local environment parser securely before loading core tools
+load_dotenv()
+
 from sast_tool.engine.scanner import Scanner
 from sast_tool.dast.crawler import DASTCrawler
 from sast_tool.dast.scanner import DASTScanner
 
-app = FastAPI(title="Static & Dynamic Security Analyzer Dashboard")
+app = FastAPI(title="Astra Ferrum Security Analytics Hub")
 
 templates = Jinja2Templates(directory="sast_tool/dashboard/templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_dashboard(request: Request):
-    """Renders the main dashboard panel homepage view."""
-    return templates.TemplateResponse(request, "index.html", {"active_tab": "sast"})
+    """Renders the main dashboard panel homepage view with empty contexts initialized."""
+    return templates.TemplateResponse(
+        request,
+        "index.html", 
+        {"active_tab": "sast", "sast_findings": [], "dast_findings": []}
+    )
 
 
 @app.post("/scan/sast", response_class=HTMLResponse)
@@ -31,18 +40,28 @@ async def handle_sast_scan(request: Request, file: UploadFile = File(...)):
             f.write(contents)
             
         scanner = Scanner()
-        findings = await scanner.scan_directory(temp_filename)        
+        findings = await scanner.scan_directory(temp_filename)
+        
         if findings:
             try:
                 from sast_tool.engine.remediation import RemediationEngine
                 ai_engine = RemediationEngine()
-                tasks = [ai_engine.enrich_finding(f) for f in findings]
-                await asyncio.gather(*tasks)
-            except Exception as ai_err:
-                print(f"[DASHBOARD AI WARNING] Enrichment pipeline timed out: {ai_err}")
+                
+                # Process each vulnerability one by one systematically
                 for f in findings:
-                    # TEMP DEBUG PATCH: Let's dump the real error directly into the UI!
-                    f.ai_remediation = f"API Error Detail Trace: {str(ai_err)}"
+                    await ai_engine.enrich_finding(f)
+                    # Force a solid 3-second cooldown between cards to let the free tier RPM settle
+                    await asyncio.sleep(3)
+            except Exception as ai_err:
+                print(f"[DASHBOARD AI WARNING] Enrichment pipeline exception: {ai_err}")
+                print(f"[DASHBOARD AI WARNING] Enrichment pipeline exception: {ai_err}")
+                for f in findings:
+                    if isinstance(f, dict):
+                        f["ai_remediation"] = "Remediation data temporarily unavailable due to upstream spikes."
+                    else:
+                        f.ai_remediation = "Remediation data temporarily unavailable due to upstream spikes."
+
+        # Normalize paths and structural traits
         for finding in findings:
             if isinstance(finding, dict):
                 finding["location"]["file"] = file.filename
@@ -52,8 +71,30 @@ async def handle_sast_scan(request: Request, file: UploadFile = File(...)):
                 finding.location.file = file.filename
                 if not hasattr(finding, 'ai_remediation') or not finding.ai_remediation:
                     finding.ai_remediation = "No supplementary analysis generated."
-            # Sort findings array inline based on physical line sequence vectors
+
+        # Sort findings array inline based on physical line sequence vectors
         findings.sort(key=lambda x: int(x["location"]["line"]) if isinstance(x, dict) else int(getattr(x.location, "line", 0) or 0))
+        
+        # Explicitly map complex class objects into raw dictionaries for template serialization safety
+        serializable_sast = []
+        for f in findings:
+            if isinstance(f, dict):
+                serializable_sast.append(f)
+            else:
+                serializable_sast.append({
+                    "rule_id": getattr(f, "rule_id", "SAST-VULN"),
+                    "severity": f.severity.name if hasattr(f.severity, "name") else str(f.severity),
+                    "message": getattr(f, "message", ""),
+                    "snippet": getattr(f, "snippet", ""),
+                    "location": {
+                        "file": getattr(f.location, "file", file.filename),
+                        "line": getattr(f.location, "line", "N/A"),
+                        "column": getattr(f.location, "column", 0)
+                    },
+                    "ai_remediation": getattr(f, "ai_remediation", "")
+                })
+        findings = serializable_sast
+            
     except Exception as e:
         findings = [{
             "rule_id": "ENGINE-CRASH",
@@ -70,7 +111,12 @@ async def handle_sast_scan(request: Request, file: UploadFile = File(...)):
     return templates.TemplateResponse(
         request,
         "index.html", 
-        {"sast_findings": findings, "active_tab": "sast", "scanned_file": file.filename}
+        {
+            "sast_findings": findings, 
+            "dast_findings": [], 
+            "active_tab": "sast", 
+            "scanned_file": file.filename
+        }
     )
 
 
@@ -83,27 +129,54 @@ async def handle_dast_scan(request: Request, url: str = Form(...)):
     try:
         crawler = DASTCrawler(url, max_depth=2)
         results = await crawler.start()
-        pages_crawled = len(results["visited_pages"])
+        
+        visited_pages = results.get("visited_pages", [])
+        attack_surface_forms = results.get("attack_surface_forms", {})
+        pages_crawled = len(visited_pages)
         
         fuzzer = DASTScanner()
         async with aiohttp.ClientSession() as session:
-            for page, forms in results["attack_surface_forms"].items():
+            for page_url, forms in attack_surface_forms.items():
                 for form in forms:
-                    findings = await fuzzer.scan_form(session, page, form)
+                    findings = await fuzzer.scan_form(session, page_url, form)
                     if findings:
                         dast_findings.extend(findings)
+                        
+        # Clean up, normalize, and convert to plain serializable dicts
+        serializable_dast = []
+        for index, finding in enumerate(dast_findings):
+            if isinstance(finding, dict):
+                normalized = {
+                    "rule_id": finding.get("rule_id") or f"DAST-VULN-{index+1:03d}",
+                    "severity": finding.get("severity", "HIGH"),
+                    "message": finding.get("message", ""),
+                    "snippet": finding.get("snippet", "")
+                }
+            else:
+                severity_val = finding.severity.name if hasattr(finding.severity, "name") else str(finding.severity)
+                normalized = {
+                    "rule_id": getattr(finding, "rule_id", "") or f"DAST-VULN-{index+1:03d}",
+                    "severity": severity_val,
+                    "message": getattr(finding, "message", ""),
+                    "snippet": getattr(finding, "snippet", "")
+                }
+            serializable_dast.append(normalized)
+            
+        dast_findings = serializable_dast
+                    
     except Exception as e:
-        dast_findings.append({
-            "rule_id": "DAST-ERROR",
-            "message": f"Web crawler network trace failed: {e}",
+        dast_findings = [{
+            "rule_id": "DAST-CRASH",
             "severity": "HIGH",
-            "snippet": url
-        })
+            "message": f"Web crawler network trace failure: {str(e)}",
+            "snippet": f"Target Endpoint Vector: {url}"
+        }]
 
     return templates.TemplateResponse(
         request,
         "index.html", 
         {
+            "sast_findings": [],
             "dast_findings": dast_findings, 
             "active_tab": "dast", 
             "scanned_url": url,

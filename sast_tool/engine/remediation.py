@@ -1,34 +1,47 @@
 # sast_tool/engine/remediation.py
 import os
-from google import genai
-from google.genai import types
+import asyncio
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Force load the .env values inside the file scope explicitly
+load_dotenv()
 
 class RemediationEngine:
     def __init__(self):
-        # Automatically detects GEMINI_API_KEY from the shell environment
+        # Configure using the environment fallback securely
         api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("Missing GEMINI_API_KEY environmental variable allocation.")
-        # Initialize the official modern SDK client wrapper
-        self.client = genai.Client(api_key=api_key)
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
+        
+        # Enforce a single concurrent task flight limit
+        self._lock = asyncio.Semaphore(1)
 
     async def enrich_finding(self, finding):
-        """Asynchronously generates security fix remediation details for a finding."""
-        prompt = f"""
-        You are an expert security engineer. Analyze this vulnerability and provide a brief, 
-        actionable remediation recommendation (maximum 3 sentences). Do not include markdown code blocks.
+        """Paces API generation queries safely to match Free Tier RPM constraints."""
+        message = finding["message"] if isinstance(finding, dict) else finding.message
+        snippet = finding["snippet"] if isinstance(finding, dict) else finding.snippet
         
-        Vulnerability: {finding.message}
-        Code Snippet: {finding.snippet}
-        """
-        try:
-            # Crucial: Use the .aio namespace for native asynchronous execution inside FastAPI
-            response = await self.client.aio.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-            )
-            # Assign the output text back to the custom object attribute
-            finding.ai_remediation = response.text.strip()
-        except Exception as e:
-            print(f"[REMEDIATION ENGINE ERROR]: {e}")
-            finding.ai_remediation = f"Analysis failed dynamically: {str(e)}"
+        prompt = (
+            f"Provide a brief, single secure code alternative fix example for this vulnerability:\n"
+            f"Context: {message}\nCode snippet:\n{snippet}"
+        )
+        
+        async with self._lock:
+            try:
+                # Add a 4-second safety cooldown buffer before firing to let the RPM slot clear out completely
+                await asyncio.sleep(4)
+                
+                response = await self.model.generate_content_async(prompt)
+                remediation_text = response.text
+                
+            except Exception as e:
+                remediation_text = f"Analysis failed dynamically: {str(e)}"
+                
+        # Assign the string back to the object structure safely
+        if isinstance(finding, dict):
+            finding["ai_remediation"] = remediation_text
+        else:
+            finding.ai_remediation = remediation_text
+            
+        return finding

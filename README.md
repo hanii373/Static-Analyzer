@@ -72,7 +72,7 @@ Astra Ferrum structures operations into clean, separated tracking pipelines:
                                                                                                │
                                                                                                ▼
 [ EXPORT SECURITY REPORTS ] ◄── [ JSON TELEMETRY ] ◄── ( Sequential Gemini API ) ◄── [ AGGREGATED METRICS ]
-
+```
 ## Ingestion
 Source file contents are passed safely to the AST parser, while live endpoint URLs are routed to the web crawler.
 
@@ -106,7 +106,7 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install python-dotenv
-```
+
 
 ## Docker Container Ingestion
 

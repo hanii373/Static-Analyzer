@@ -1,0 +1,74 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Static-Analyzer",
+          "version": "1.0.0",
+          "rules": [
+            {
+              "id": "PY-AST-001",
+              "shortDescription": {
+                "text": "Dangerous command execution via os.system()"
+              },
+              "properties": {
+                "precision": "high"
+              }
+            },
+            {
+              "id": "PY-AST-002",
+              "shortDescription": {
+                "text": "Dangerous execution via eval()"
+              },
+              "properties": {
+                "precision": "high"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "PY-AST-001",
+          "message": {
+            "text": "Dangerous command execution via os.system()"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "test_vulnerabilities.py"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "PY-AST-002",
+          "message": {
+            "text": "Dangerous execution via eval()"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "test_vulnerabilities.py"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

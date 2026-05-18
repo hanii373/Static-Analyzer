@@ -104,6 +104,11 @@ def run_scan(target_path: str, output_format: str):
         logger.info(f"Starting scan for target: {target_path}")
         findings = asyncio.run(scanner.scan_directory(target_path))
         
+        # 1. ALWAYS write the SARIF file if requested, even if findings list is empty!
+        # This keeps the GitHub Action from complaining that the file doesn't exist.
+        if output_format == "json":
+            export_to_sarif(findings)
+        
         if not findings:
             print("\n✅ Clean code scan! No security vulnerabilities identified.")
             return
@@ -115,14 +120,9 @@ def run_scan(target_path: str, output_format: str):
             print(f"  🔍 Snippet: {finding.snippet}")
             print("-" * 60)
             
-        # If the output format is JSON/SARIF, write out to disk
-        if output_format == "json":
-            export_to_sarif(findings)
-            
     except Exception as e:
         logger.error(f"Execution boundary breakdown: {e}")
         sys.exit(1)
-
 
 def main():
     parser = argparse.ArgumentParser(description="Application Security Testing Platform Engine")

@@ -19,13 +19,13 @@ class ASTAnalyzer:
         if node.type == "call":
             func_node = node.child_by_field_name("function")
             if func_node:
-                # Case A: Standalone execution sinks (e.g., eval("user_input"))
+                # Case A: Standalone execution sinks (ex. eval("user_input"))
                 if not look_for_attribute and func_node.type == "identifier":
                     node_text = func_node.text.decode("utf-8") if func_node.text else ""
                     if node_text == sink_name:
                         matches.append((node, "fn"))
                 
-                # Case B: Multi-layer Attribute calls (e.g., os.system("id"))
+                # Case B: Multi-layer Attribute calls (ex. os.system("id"))
                 elif look_for_attribute and func_node.type == "attribute":
                     obj_node = func_node.child_by_field_name("object")
                     attr_node = func_node.child_by_field_name("attribute")
@@ -35,7 +35,7 @@ class ASTAnalyzer:
                         attr_text = attr_node.text.decode("utf-8") if attr_node.text else ""
                         full_signature = f"{obj_text}.{attr_text}"
                         
-                        # Full path validation (e.g., "os.system" matches signature targets precisely)
+                        # Full path validation (ex. "os.system" matches signature targets precisely)
                         if attr_text == sink_name or full_signature == sink_name:
                             matches.append((node, "attr"))
                             

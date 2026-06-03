@@ -1,4 +1,3 @@
-# sast_tool/dast/crawler.py
 import asyncio
 import logging
 from urllib.parse import urljoin, urlparse
@@ -12,7 +11,7 @@ class WebForm:
     def __init__(self, action: str, method: str, inputs: list):
         self.action = action
         self.method = method.upper()
-        self.inputs = inputs  # List of input names/types
+        self.inputs = inputs 
 
     def __repr__(self):
         return f"WebForm(action='{self.action}', method='{self.method}', inputs={self.inputs})"

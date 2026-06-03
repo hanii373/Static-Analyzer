@@ -1,4 +1,3 @@
-# Create this file: check_ai.py
 import asyncio
 from sast_tool.ai.client import AIClient
 from sast_tool.ai.cache import AICache

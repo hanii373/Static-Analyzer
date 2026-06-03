@@ -1,4 +1,3 @@
-# sast_tool/rules/sec_001_dangerous_calls.py
 from typing import List
 from sast_tool.rules.base import ASTRule
 from sast_tool.engine.models import Severity

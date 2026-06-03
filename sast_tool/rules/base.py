@@ -1,4 +1,3 @@
-# sast_tool/rules/base.py
 from abc import ABC, abstractmethod
 from typing import List
 from tree_sitter import Node 

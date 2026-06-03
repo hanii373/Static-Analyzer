@@ -1,4 +1,3 @@
-# sast_tool/engine/ast_analyzer.py
 from tree_sitter import Parser, Language
 import tree_sitter_python as tspython
 

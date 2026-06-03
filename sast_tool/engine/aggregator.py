@@ -18,14 +18,14 @@ class Aggregator:
             else:
                 existing = unique[key]
 
-                # 🔥 Boost confidence (multi-engine detection)
+                # Boost confidence (multi-engine detection)
                 existing.confidence = min(1.0, getattr(existing, "confidence", 0.5) + 0.2)
 
-                # 🔥 Keep higher confidence finding
+                # Keep higher confidence finding
                 if getattr(f, "confidence", 0.5) > getattr(existing, "confidence", 0.5):
                     unique[key] = f
 
-                # 🔥 Optional severity boost
+                # Optional severity boost
                 if existing.severity.value == "MEDIUM":
                     existing.severity = Severity.HIGH
 

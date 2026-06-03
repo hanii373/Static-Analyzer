@@ -17,3 +17,4 @@ class DangerousSubprocessRule(ASTRule):
 
     def get_target_names(self) -> List[str]:
         return ["Popen", "run", "call"]
+        

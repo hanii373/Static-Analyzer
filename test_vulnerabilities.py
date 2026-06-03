@@ -1,11 +1,8 @@
-# test_vulnerabilities.py
 import os
 import subprocess
 import ast
 
-# =====================================================================
-# SECTION 1: TRUE POSITIVES (Your tool MUST flag these)
-# =====================================================================
+# SECTION 1: TRUE POSITIVES (tool MUST flag these)
 
 def true_positives_demo(user_input):
     # PY-AST-002: Direct execution of user input via eval
@@ -20,10 +17,7 @@ def true_positives_demo(user_input):
     # PY-AST-001: Subprocess run with shell=True string commands
     subprocess.run("ls -la /tmp", shell=True)
 
-
-# =====================================================================
 # SECTION 2: FALSE POSITIVE DECOYS (Regex would fail; AST MUST pass)
-# =====================================================================
 
 class CustomLogger:
     def system(self, message):
@@ -51,9 +45,7 @@ def false_positives_test():
     logger.system("Database backup completed successfully.")
 
 
-# =====================================================================
 # SECTION 3: COMPLEX NESTED SCENARIOS (Testing AST traversal depth)
-# =====================================================================
 
 def nested_scenarios_test(complex_input):
     # Nested call: eval() inside an eval() statement
@@ -67,9 +59,7 @@ def nested_scenarios_test(complex_input):
     print("Execution output is: ", os.system("ls"))
 
 
-# =====================================================================
 # SECTION 4: FAULT TOLERANCE & BROKEN SYNTAX (Tree-sitter Recovery)
-# =====================================================================
 
 def broken_syntax_test():
     # Tree-sitter excels at parsing code even with syntax errors!

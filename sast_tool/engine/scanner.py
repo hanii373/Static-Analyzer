@@ -8,7 +8,7 @@ from sast_tool.sast.bandit_runner import BanditRunner
 from sast_tool.sast.semgrep_runner import SemgrepRunner
 from sast_tool.engine.aggregator import Aggregator
 from sast_tool.ai.client import AIClient
-from sast_tool.ai.cache import AICache  # Supporting the new caching layer
+from sast_tool.ai.cache import AICache 
 
 logger = logging.getLogger(__name__)
 

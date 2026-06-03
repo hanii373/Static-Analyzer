@@ -1,4 +1,3 @@
-# sast_tool/dashboard/app.py
 import os
 import aiohttp
 import asyncio

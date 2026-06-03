@@ -1,4 +1,3 @@
-# sast_tool/rules/loader.py
 from sast_tool.rules.sec_001_dangerous_calls import DangerousOsSystemRule, DangerousSubprocessRule
 from sast_tool.rules.sec_002_dangerous_eval import DangerousEvalRule
 

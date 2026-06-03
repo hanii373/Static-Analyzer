@@ -1,4 +1,3 @@
-# test_crawler.py
 import asyncio
 import logging
 from sast_tool.dast.crawler import DASTCrawler, WebForm

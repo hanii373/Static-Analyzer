@@ -1,4 +1,3 @@
-# sast_tool/cli.py
 import argparse
 import asyncio
 import logging

@@ -1,4 +1,3 @@
-# sast_tool/dast/scanner.py
 import asyncio
 import logging
 import aiohttp

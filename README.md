@@ -1,4 +1,4 @@
-# 🛰️ Astra Ferrum
+# Unified AST
 
 > A unified, high-performance application security testing platform combining Structural Static Application Security Testing (SAST), Black-Box Dynamic Crawling & Fuzzing (DAST), and an AI-powered Remediation Engine. Every structural finding tracks precisely where the vulnerability lives and maps live code fixes straight to your dashboard or CI/CD pipelines.
 
